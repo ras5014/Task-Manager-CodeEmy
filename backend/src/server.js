@@ -1,10 +1,15 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 import Task from "./models/Task.js";
+import User from "./models/User.js";
 
 const app = express();
+
+const SECRET = "nieff6f566^^*&njksaka";
 
 // Middleware
 app.use(express.json());
@@ -33,24 +38,52 @@ app.post("/tasks", async (req, res) => {
   res.status(201).json({ task: newTask });
 });
 
-// Update / PUT
-// Route e.g. localhost:3000/tasks/1
-// app.put("/tasks/:id", (req, res) => {
-//   const { id } = req.params;
-//   const { title, completed } = req.body;
+// Add Update and Delete APIs
 
-//   const task = tasks.find((t) => t.id === parseInt(id));
+// Authentication / User APIs
 
-//   if (task) {
-//     task.title = title;
-//     task.completed = completed;
-//     res.status(200).json({ task: task });
-//   } else {
-//     res.status(404).json({ message: "Task not found" });
-//   }
-// });
+// Register
+app.post("/register", async (req, res) => {
+  const { name, email, password } = req.body;
 
-// Delete / DELETE
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const newUser = {
+    name: name,
+    email: email,
+    password: hashedPassword,
+  };
+
+  await User.create(newUser);
+
+  res.status(201).json({ user: newUser });
+});
+
+// Login
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Find if the User exists with the email
+  const user = await User.findOne({ email: email });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // Compare the passwords
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    return res.status(401).json({ message: "Invalid password" });
+  }
+
+  // Generate a token or session for the user (optional)
+  const token = jwt.sign({ id: user._id }, SECRET, { expiresIn: "1h" });
+
+  res.status(200).json({ user: user, token: token });
+});
 
 app.listen(3000, () => {
   mongoose
