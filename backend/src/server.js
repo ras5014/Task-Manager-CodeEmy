@@ -1,5 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
+import cors from "cors";
 
 import Task from "./models/Task.js";
 
@@ -7,7 +8,11 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  }),
+);
 // Read / GET
 app.get("/tasks", async (req, res) => {
   const tasks = await Task.find();
