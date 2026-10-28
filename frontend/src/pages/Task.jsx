@@ -1,43 +1,42 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router";
+import api from "../api";
 
 function Task() {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  // Call the API populate tasks
   useEffect(() => {
     const getTasks = async () => {
-      const response = await axios.get("http://localhost:3000/tasks");
+      const response = await api.get("/tasks");
       setTasks(response.data.tasks);
     };
 
     getTasks();
   }, []);
 
-  const createTask = async (title) => {
-    const response = await axios.post("http://localhost:3000/tasks", {
-      title: title,
-    });
+  async function createTask(e) {
+    e.preventDefault();
+    const response = await api.post("/tasks", { title: newTaskTitle });
+    setTasks((tasks) => [...tasks, response.data.task]);
+    setNewTaskTitle("");
+  }
 
-    setTasks([...tasks, response.data.task]);
-  };
-
-  console.log(tasks);
   return (
     <>
       <h1>Task Manager</h1>
+      <button onClick={() => {
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+      }}>Logout</button>
       <p>Manage your tasks efficiently.</p>
       {/* Add Task Form */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          createTask(newTaskTitle);
-          setNewTaskTitle("");
-        }}
-      >
+      <form onSubmit={createTask}>
         <input
+          aria-label="Task title"
           type="text"
+          required
           placeholder="Add a task"
           onChange={(e) => setNewTaskTitle(e.target.value)}
           value={newTaskTitle}
